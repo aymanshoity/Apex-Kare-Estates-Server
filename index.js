@@ -29,6 +29,7 @@ async function run() {
 
     const apartmentCollection = client.db("Apex-Kare-Estate").collection("apartments");
     const accountHolderCollection = client.db("Apex-Kare-Estate").collection("accountHolders");
+    const agreementRequestsCollection = client.db("Apex-Kare-Estate").collection("agreementRequests");
 
     app.post('/jwt',async(req,res)=>{
         const user=req.body;
@@ -52,9 +53,15 @@ async function run() {
         res.send(result)
     })
 
+    app.post('/agreementRequests',async(req,res)=>{
+        const agreementRequest=req.body;
+        const result=await agreementRequestsCollection.insertOne(agreementRequest)
+        res.send(result)
+    })
+
 
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
