@@ -30,6 +30,12 @@ async function run() {
     const apartmentCollection = client.db("Apex-Kare-Estate").collection("apartments");
     const accountHolderCollection = client.db("Apex-Kare-Estate").collection("accountHolders");
 
+    app.post('/jwt',async(req,res)=>{
+        const user=req.body;
+        const token=jwt.sign(user,process.env.TOKEN,{expiresIn:"1h"})
+        res.send({token})
+    })
+
     app.get('/apartments' ,async(req,res)=>{
         const cursor=await apartmentCollection.find().toArray()
         res.send(cursor)
@@ -37,6 +43,11 @@ async function run() {
 
     app.post('/accountHolders', async(req,res)=>{
         const accountHolder=req.body;
+        const query={email:accountHolder.email}
+        const existingUser=await accountHolderCollection.findOne(query)
+        if(existingUser){
+            return res.send({message:'User already exist',insertedId:null})
+        }
         const  result=await accountHolderCollection.insertOne(accountHolder)
         res.send(result)
     })
