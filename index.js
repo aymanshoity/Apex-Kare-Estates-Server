@@ -21,7 +21,7 @@ app.use(
 app.use(express.json())
 
 
-const verifyToken = (req, res, next) => {
+const verifyToken = async(req, res, next) => {
   console.log('inside verified token', req.headers.authorization)
   if (!req.headers.authorization) {
     res.status(401).send({ message: 'Unauthorized' })
@@ -31,12 +31,13 @@ const verifyToken = (req, res, next) => {
     if (err) {
       return res.status(401).send({ message: 'Unauthorized' })
     }
+    console.log(decoded)
     req.decoded = decoded;
     next()
   })
 }
 
-const verifyAdmin = async (req, res, next) => {
+const verifyAdmin = async(req, res, next) => {
   const email = req.decoded.email;
   const query = { email: email }
   const accHolder = await accountHolderCollection.findOne(query)
@@ -142,9 +143,9 @@ app.patch('/agreementRequests/admin/:id', verifyToken, verifyAdmin, async (req, 
 })
 app.get('/agreementRequests', verifyToken, async(req, res) => {
   const email = req.query.email;
-  console.log('user in the valid token', req.user.email)
+  console.log('user in the valid token', req.decoded.email)
 
-  if (email !== req.user.email) {
+  if (email !== req.decoded.email) {
     return res.status(403).send({ message: 'Forbidden Access' })
   }
   let query = {}
@@ -189,6 +190,12 @@ app.get('/accountHolders/admin/:email', verifyToken, async (req, res) => {
 app.get('/announcements', verifyToken, async (req, res) => {
   const cursor = await announcementsCollection.find().toArray()
   res.send(cursor)
+})
+
+app.post('/announcements',verifyToken,verifyAdmin,async(req,res)=>{
+  const announcement = req.body;
+  const result = await announcementsCollection.insertOne(announcement)
+  res.send(result)
 })
 
 app.get('/coupons', async (req, res) => {
