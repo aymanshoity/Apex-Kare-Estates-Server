@@ -14,7 +14,7 @@ const port = process.env.PORT || 5000
 
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://enmmedia.web.app'],
+    origin: ['http://localhost:5173', 'http://localhost:5174','http://localhost:5176', 'https://enmmedia.web.app'],
     credentials: true,
   }),
 )
@@ -102,6 +102,12 @@ app.post('/jwt', async (req, res) => {
 
 app.get('/apartments', async (req, res) => {
   const cursor = await apartmentCollection.find().toArray()
+  res.send(cursor)
+})
+app.get('/apartments/:id', async (req, res) => {
+  const id=req.params.id;
+  const query={_id:new ObjectId(id)}
+  const cursor = await apartmentCollection.findOne(query)
   res.send(cursor)
 })
 
@@ -258,6 +264,12 @@ app.get('/coupons', async (req, res) => {
 app.post('/coupons', async (req, res) => {
   const coupon=req.body
   const result = await couponsCollection.insertOne(coupon)
+  res.send(result)
+})
+app.delete('/coupons/:coupon_id',verifyToken,verifyAdmin, async (req, res) => {
+  const coupon=req.params.coupon_id;
+  const query={coupon_id:coupon}
+  const result = await couponsCollection.deleteOne(query)
   res.send(result)
 })
 app.listen(port, () => {
