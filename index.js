@@ -247,9 +247,18 @@ app.post('/announcements',verifyToken,verifyAdmin,async(req,res)=>{
 })
 
 // coupons related API
+app.get('/manageCoupons', async (req, res) => {
+  const cursor = await manageCouponsCollection.find().toArray()
+  res.send(cursor)
+})
 app.get('/coupons', async (req, res) => {
   const cursor = await couponsCollection.find().toArray()
   res.send(cursor)
+})
+app.post('/coupons', async (req, res) => {
+  const coupon=req.body
+  const result = await couponsCollection.insertOne(coupon)
+  res.send(result)
 })
 app.listen(port, () => {
   console.log(`Apex-Kare-Estate is running on port ${port}`)
