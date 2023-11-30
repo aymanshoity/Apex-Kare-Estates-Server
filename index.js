@@ -78,7 +78,7 @@ const accountHolderCollection = client.db("Apex-Kare-Estate").collection("accoun
 const agreementRequestsCollection = client.db("Apex-Kare-Estate").collection("agreementRequests");
 const announcementsCollection = client.db("Apex-Kare-Estate").collection("announcements");
 const couponsCollection = client.db("Apex-Kare-Estate").collection("coupons");
-// const usersCollection = client.db("Apex-Kare-Estate").collection("users");
+const manageCouponsCollection = client.db("Apex-Kare-Estate").collection("manageCoupons");
 const membersCollection = client.db("Apex-Kare-Estate").collection("members");
 
 
@@ -201,7 +201,7 @@ app.patch('/agreementRequests/admin/:id', verifyToken, verifyAdmin, async (req, 
   res.send(result)
 
 })
-app.get('/agreementRequests/:email',async(req,res)=>{
+app.get('/agreementRequests/:email',verifyToken,async(req,res)=>{
   const email=req.params.email;
   const query={email:email};
   const result=await agreementRequestsCollection.findOne(query)
@@ -210,19 +210,25 @@ app.get('/agreementRequests/:email',async(req,res)=>{
 
 
 // member related API
-app.get('/members/:email',async(req,res)=>{
+app.get('/members/:email',verifyToken,async(req,res)=>{
   const email=req.params.email;
   const query={email:email};
   const result=await membersCollection.findOne(query)
   res.send(result)
  })
- app.get('/members',async(req,res)=>{
+ app.get('/members',verifyToken,async(req,res)=>{
   const result=await membersCollection.find().toArray()
   res.send(result)
  })
 app.post('/members', verifyToken,verifyAdmin, async (req, res) => {
   const member = req.body;
   const result = await membersCollection.insertOne(member)
+  res.send(result)
+})
+app.delete('/members/:id',verifyToken,verifyAdmin,async(req,res)=>{
+  const id=req.params.id;
+  const query={_id:new ObjectId(id)};
+  const result=await membersCollection.deleteOne(query)
   res.send(result)
 })
  
