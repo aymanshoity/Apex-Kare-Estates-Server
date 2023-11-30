@@ -24,9 +24,9 @@ app.use(express.json())
 const verifyToken = async(req, res, next) => {
   console.log('inside verified token', req.headers.authorization)
   if (!req.headers.authorization) {
-    res.status(401).send({ message: 'Unauthorized' })
+    return res.status(401).send({ message: 'Unauthorized' })
   }
-  const token = req.headers.authorization.split(' ')[1]
+  const token = req.headers?.authorization?.split(' ')[1]
   jwt.verify(token, process.env.TOKEN, (err, decoded) => {
     if (err) {
       return res.status(401).send({ message: 'Unauthorized' })
@@ -78,6 +78,8 @@ const accountHolderCollection = client.db("Apex-Kare-Estate").collection("accoun
 const agreementRequestsCollection = client.db("Apex-Kare-Estate").collection("agreementRequests");
 const announcementsCollection = client.db("Apex-Kare-Estate").collection("announcements");
 const couponsCollection = client.db("Apex-Kare-Estate").collection("coupons");
+// const usersCollection = client.db("Apex-Kare-Estate").collection("users");
+const membersCollection = client.db("Apex-Kare-Estate").collection("members");
 
 
 
@@ -96,13 +98,14 @@ app.post('/jwt', async (req, res) => {
   res.send({ token })
 })
 
-
+// apartment related API
 
 app.get('/apartments', async (req, res) => {
   const cursor = await apartmentCollection.find().toArray()
   res.send(cursor)
 })
 
+// accountHolder  related API
 app.post('/accountHolders', async (req, res) => {
   const accountHolder = req.body;
   const query = { email: accountHolder.email }
@@ -116,48 +119,6 @@ app.post('/accountHolders', async (req, res) => {
 app.get('/accountHolders', verifyToken, verifyAdmin, async (req, res) => {
   const cursor = await accountHolderCollection.find().toArray()
   res.send(cursor)
-})
-
-app.post('/agreementRequests', verifyToken, async (req, res) => {
-  const agreementRequest = req.body;
-  const result = await agreementRequestsCollection.insertOne(agreementRequest)
-  res.send(result)
-})
-app.get('/agreementRequests', verifyToken, async (req, res) => {
-  const cursor = await agreementRequestsCollection.find().toArray()
-  res.send(cursor)
-})
-app.patch('/agreementRequests/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
-  const id = req.params.id
-  const query = { _id: new ObjectId(id) }
-  const existingRole = req.body
-  const updatedDoc = {
-    $set: {
-      role: existingRole.role,
-      status: existingRole.status
-    }
-  }
-  const result = await agreementRequestsCollection.updateOne(query, updatedDoc)
-  res.send(result)
-
-})
-app.get('/agreementRequests', verifyToken, async(req, res) => {
-  const email = req.query.email;
-  console.log('user in the valid token', req.decoded.email)
-
-  if (email !== req.decoded.email) {
-    return res.status(403).send({ message: 'Forbidden Access' })
-  }
-  let query = {}
-
-  if (req.query?.email) {
-    query.email = email
-  }
-  if (req.query?.role) {
-    query.role = req.query.role
-  }
-  const result = await agreementRequestsCollection.findOne(query)
-  res.send(result)
 })
 
 app.patch('/accountHolders/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
@@ -186,6 +147,87 @@ app.get('/accountHolders/admin/:email', verifyToken, async (req, res) => {
   }
   res.send({ admin })
 })
+// agreement related API
+
+app.get('/agreementRequests', verifyToken, async (req, res) => {
+  const cursor = await agreementRequestsCollection.find().toArray()
+  res.send(cursor)
+})
+app.post('/agreementRequests', async (req, res) => {
+  const agreementRequest = req.body;
+  const result = await agreementRequestsCollection.insertOne(agreementRequest)
+  res.send(result)
+})
+
+app.get('/agreementRequests/admin/:id',verifyToken,verifyAdmin,async(req,res)=>{
+  const id=req.params.id;
+  const query={_id: new ObjectId(id)}
+  const result=await agreementRequestsCollection.findOne(query)
+  res.send(result)
+})
+// app.get('/agreementRequests', verifyToken,async(req, res) => {
+//   const email = req.query.email;
+//   console.log('user in the valid token', req.query.email)
+//   // console.log('user in the valid token', req.user.email)
+
+//   if (email !== req.decoded.email) {
+//     return res.status(403).send({ message: 'Forbidden Access' })
+//   }
+//   let query = {}
+
+//   if (req.query.email) {
+//     query.email = email
+//   }
+//   if (req.query?.role) {
+//     query.role = req.query.role
+//   }
+//   const result = await agreementRequestsCollection.findOne(query)
+//   res.send(result)
+// })
+
+
+
+app.patch('/agreementRequests/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
+  const id = req.params.id
+  const query = { _id: new ObjectId(id) }
+  const existingRole = req.body
+  const updatedDoc = {
+    $set: {
+      role: existingRole.role,
+      status: existingRole.status
+    }
+  }
+  const result = await agreementRequestsCollection.updateOne(query, updatedDoc)
+  res.send(result)
+
+})
+app.get('/agreementRequests/:email',async(req,res)=>{
+  const email=req.params.email;
+  const query={email:email};
+  const result=await agreementRequestsCollection.findOne(query)
+  res.send(result)
+ })
+
+
+// member related API
+app.get('/members/:email',async(req,res)=>{
+  const email=req.params.email;
+  const query={email:email};
+  const result=await membersCollection.findOne(query)
+  res.send(result)
+ })
+ app.get('/members',async(req,res)=>{
+  const result=await membersCollection.find().toArray()
+  res.send(result)
+ })
+app.post('/members', verifyToken,verifyAdmin, async (req, res) => {
+  const member = req.body;
+  const result = await membersCollection.insertOne(member)
+  res.send(result)
+})
+ 
+
+// announcement related API
 
 app.get('/announcements', verifyToken, async (req, res) => {
   const cursor = await announcementsCollection.find().toArray()
@@ -198,6 +240,7 @@ app.post('/announcements',verifyToken,verifyAdmin,async(req,res)=>{
   res.send(result)
 })
 
+// coupons related API
 app.get('/coupons', async (req, res) => {
   const cursor = await couponsCollection.find().toArray()
   res.send(cursor)
