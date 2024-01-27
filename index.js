@@ -4,7 +4,7 @@ require('dotenv').config()
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const jwt = require('jsonwebtoken')
-
+const stripe=require('stripe')(process.env.STRIPE_SECRET_KEY)
 const app = express()
 const port = process.env.PORT || 5000
 
@@ -12,13 +12,32 @@ const port = process.env.PORT || 5000
 
 
 
-app.use(
-  cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174','http://localhost:5176', 'https://enmmedia.web.app'],
-    credentials: true,
-  }),
-)
+// app.use(
+//   cors({
+//     origin: ['https://apexkareestates.netlify.app', 'http://localhost:5173','http://localhost:5174'],
+//     credentials: true,           //access-control-allow-credentials:true
+//     optionSuccessStatus:200
+//   }),
+// )
+const corsConfig = {
+  origin: '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+  }
+  app.use(cors(corsConfig))
 app.use(express.json())
+// app.use((req, res, next) => {
+//   res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+//   res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS');
+//   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+
+//   // Intercepts OPTIONS method
+//   if (req.method === 'OPTIONS') {
+//     res.sendStatus(200);
+//   } else {
+//     next();
+//   }
+// });
 
 
 const verifyToken = async(req, res, next) => {
@@ -271,6 +290,23 @@ app.delete('/coupons/:coupon_id',verifyToken,verifyAdmin, async (req, res) => {
   const query={coupon_id:coupon}
   const result = await couponsCollection.deleteOne(query)
   res.send(result)
+})
+
+// payment intent
+app.post('/create-payment-intent', async(req,res)=>{
+  const {price}=req.body;
+  const amount= parseInt(price*100)
+  console.log(amount ,'amount inside the intent')
+
+  const paymentIntent=await stripe.paymentIntents.create({
+    amount:amount,
+    currency:"usd",
+    payment_method_types:['card']
+  })
+
+  res.send({
+    clientsSecret:paymentIntent.client_secret
+  })
 })
 app.listen(port, () => {
   console.log(`Apex-Kare-Estate is running on port ${port}`)
